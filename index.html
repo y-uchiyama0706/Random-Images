@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Memory Sports - Random Images</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      text-align: center;
+    }
+    .row {
+      display: flex;
+      justify-content: center;
+      margin: 10px;
+    }
+    .img-wrapper {
+      margin: 5px;
+    }
+    .img-wrapper img {
+      width: 80px;
+      height: 80px;
+    }
+    .input-row {
+      display: flex;
+      justify-content: center;
+      margin: 10px;
+    }
+    .input-wrapper input {
+      width: 40px;
+      margin: 0 5px;
+      text-align: center;
+    }
+    .correct {
+      background-color: #a6f3a6;
+    }
+    .incorrect {
+      background-color: #f3a6a6;
+    }
+  </style>
+</head>
+<body>
+  <h1>Memory Sports - Random Images</h1>
+  <div id="container"></div>
+  <button onclick="startRecall()">Finish</button>
+  <div id="recall"></div>
+  <button onclick="checkAnswers()">答え合わせ</button>
+
+  <script>
+    const totalRows = 30;
+    const itemsPerRow = 5;
+    let imageSources = [];
+    let rows = [];
+    let shuffledRows = [];
+
+    function shuffle(arr) {
+      let newArr = arr.slice();
+      for (let i = newArr.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [newArr[i], newArr[j]] = [newArr[j], newArr[i]];
+      }
+      return newArr;
+    }
+
+    function preloadImages(list) {
+      list.forEach(src => {
+        const img = new Image();
+        img.src = 'img/' + src;
+      });
+    }
+
+    function generateProblem() {
+      const container = document.getElementById('container');
+      for (let i = 0; i < totalRows; i++) {
+        const row = document.createElement('div');
+        row.className = 'row';
+        const randomImgs = shuffle(imageSources).slice(0, itemsPerRow);
+        rows.push(randomImgs);
+        randomImgs.forEach(src => {
+          const wrapper = document.createElement('div');
+          wrapper.className = 'img-wrapper';
+          const img = new Image();
+          img.src = 'img/' + src;
+          wrapper.appendChild(img);
+          row.appendChild(wrapper);
+        });
+        container.appendChild(row);
+      }
+    }
+
+    function startRecall() {
+      document.getElementById('container').style.display = 'none';
+      const recall = document.getElementById('recall');
+      recall.innerHTML = '';
+      shuffledRows = [];
+
+      rows.forEach((row, idx) => {
+        const shuffledRow = shuffle(row);
+        shuffledRows.push(shuffledRow);
+
+        const rowDiv = document.createElement('div');
+        rowDiv.className = 'row';
+        shuffledRow.forEach(src => {
+          const wrapper = document.createElement('div');
+          wrapper.className = 'img-wrapper';
+          const img = new Image();
+          img.src = 'img/' + src;
+          wrapper.appendChild(img);
+          rowDiv.appendChild(wrapper);
+        });
+
+        const inputRow = document.createElement('div');
+        inputRow.className = 'input-row';
+        for (let i = 0; i < itemsPerRow; i++) {
+          const inputWrapper = document.createElement('div');
+          inputWrapper.className = 'input-wrapper';
+          const input = document.createElement('input');
+          input.type = 'number';
+          input.min = 1;
+          input.max = itemsPerRow;
+          input.setAttribute('data-row', idx);
+          input.setAttribute('data-index', i);
+          inputWrapper.appendChild(input);
+          inputRow.appendChild(inputWrapper);
+        }
+
+        recall.appendChild(rowDiv);
+        recall.appendChild(inputRow);
+      });
+    }
+
+    function checkAnswers() {
+      const inputs = document.querySelectorAll('input');
+      inputs.forEach(input => {
+        const rowIdx = parseInt(input.getAttribute('data-row'));
+        const indexInShuffled = parseInt(input.getAttribute('data-index'));
+        const answerIndex = parseInt(input.value) - 1;
+
+        const shuffledImg = shuffledRows[rowIdx][indexInShuffled];
+        const correctImg = rows[rowIdx][answerIndex];
+
+        if (shuffledImg === correctImg) {
+          input.classList.remove('incorrect');
+          input.classList.add('correct');
+        } else {
+          input.classList.remove('correct');
+          input.classList.add('incorrect');
+        }
+      });
+    }
+
+    // JSON読み込みして画像一覧を取得
+    fetch('imgList.json')
+      .then(response => response.json())
+      .then(data => {
+        imageSources = data;
+        preloadImages(imageSources);
+        generateProblem();
+      });
+  </script>
+</body>
+</html>
