@@ -36,12 +36,17 @@
     .incorrect {
       background-color: #f3a6a6;
     }
+    #timer {
+      font-size: 24px;
+      margin: 20px;
+    }
   </style>
 </head>
 <body>
   <h1>Memory Sports - Random Images</h1>
+  <div id="timer">TIME: 05:00</div>
   <div id="container"></div>
-  <button onclick="startRecall()">Finish</button>
+  <button onclick="finishEarly()">Finish</button>
   <div id="recall"></div>
   <button onclick="checkAnswers()">答え合わせ</button>
 
@@ -51,6 +56,9 @@
     let imageSources = [];
     let rows = [];
     let shuffledRows = [];
+    let timerInterval;
+    let timeRemaining = 300; // 5 minutes = 300 seconds
+    let finished = false;
 
     function shuffle(arr) {
       let newArr = arr.slice();
@@ -85,10 +93,38 @@
         });
         container.appendChild(row);
       }
+      startTimer();
+    }
+
+    function startTimer() {
+      updateTimerDisplay();
+      timerInterval = setInterval(() => {
+        timeRemaining--;
+        updateTimerDisplay();
+        if (timeRemaining <= 0) {
+          clearInterval(timerInterval);
+          if (!finished) startRecall();
+        }
+      }, 1000);
+    }
+
+    function updateTimerDisplay() {
+      const minutes = String(Math.floor(timeRemaining / 60)).padStart(2, '0');
+      const seconds = String(timeRemaining % 60).padStart(2, '0');
+      document.getElementById('timer').textContent = `TIME: ${minutes}:${seconds}`;
+    }
+
+    function finishEarly() {
+      if (!finished) {
+        clearInterval(timerInterval);
+        startRecall();
+      }
     }
 
     function startRecall() {
+      finished = true;
       document.getElementById('container').style.display = 'none';
+      document.getElementById('timer').style.display = 'none';
       const recall = document.getElementById('recall');
       recall.innerHTML = '';
       shuffledRows = [];
@@ -148,7 +184,6 @@
       });
     }
 
-    // JSON読み込みして画像一覧を取得
     fetch('imgList.json')
       .then(response => response.json())
       .then(data => {
